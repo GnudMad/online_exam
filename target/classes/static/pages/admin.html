@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin – Hệ Thống Thi Online</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">🏫</div>
+    <div><h5>Thi Trắc Nghiệm</h5><small>Quản trị viên</small></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">Tổng quan</div>
+    <a class="nav-link active" data-section="sec-dashboard" onclick="showSection('sec-dashboard')"><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <div class="nav-section-title">Quản lý</div>
+    <a class="nav-link" data-section="sec-users" onclick="showSection('sec-users')"><i class="bi bi-people-fill"></i> Người dùng</a>
+    <a class="nav-link" data-section="sec-grades" onclick="showSection('sec-grades')"><i class="bi bi-layers-fill"></i> Khối & Môn học</a>
+    <div class="nav-section-title">Báo cáo</div>
+    <a class="nav-link" data-section="sec-reports" onclick="showSection('sec-reports')"><i class="bi bi-bar-chart-fill"></i> Thống kê trường</a>
+    <a class="nav-link" data-section="sec-exam-report" onclick="showSection('sec-exam-report')"><i class="bi bi-file-earmark-excel-fill"></i> Xuất báo cáo</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" id="sidebar-avatar">A</div>
+      <div><div class="user-name" id="sidebar-name">Admin</div><div class="user-role">Quản trị viên</div></div>
+      <button class="btn btn-sm ms-auto p-1" onclick="API.logout()" style="background:rgba(255,255,255,0.1);border:none;color:#fff"><i class="bi bi-box-arrow-right"></i></button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Dashboard -->
+  <div id="sec-dashboard" class="section active">
+    <div class="topbar"><div><h4><i class="bi bi-speedometer2 me-2 text-danger"></i>Dashboard</h4></div></div>
+    <div class="row g-3 mb-4">
+      <div class="col-md-3"><div class="stat-card" style="border-color:#e94560"><div class="d-flex justify-content-between align-items-center"><div><div class="stat-value text-danger" id="stat-users">–</div><div class="stat-label">Tổng người dùng</div></div><div class="stat-icon" style="background:#fff0f3;color:#e94560"><i class="bi bi-people-fill"></i></div></div></div></div>
+      <div class="col-md-3"><div class="stat-card" style="border-color:#0f3460"><div class="d-flex justify-content-between align-items-center"><div><div class="stat-value" style="color:#0f3460" id="stat-teachers">–</div><div class="stat-label">Giáo viên</div></div><div class="stat-icon" style="background:#eef3ff;color:#0f3460"><i class="bi bi-person-video3"></i></div></div></div></div>
+      <div class="col-md-3"><div class="stat-card" style="border-color:#27ae60"><div class="d-flex justify-content-between align-items-center"><div><div class="stat-value text-success" id="stat-students">–</div><div class="stat-label">Học sinh</div></div><div class="stat-icon" style="background:#f0fff4;color:#27ae60"><i class="bi bi-mortarboard-fill"></i></div></div></div></div>
+      <div class="col-md-3"><div class="stat-card" style="border-color:#f39c12"><div class="d-flex justify-content-between align-items-center"><div><div class="stat-value" style="color:#f39c12" id="stat-exams">–</div><div class="stat-label">Bài kiểm tra</div></div><div class="stat-icon" style="background:#fffbf0;color:#f39c12"><i class="bi bi-journal-check"></i></div></div></div></div>
+    </div>
+    <div class="card"><div class="card-header"><h6><i class="bi bi-bar-chart me-2"></i>Thống kê bài thi</h6></div>
+      <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0">
+        <thead><tr><th>Bài thi</th><th>Môn học</th><th>Số HS</th><th>Điểm TB</th><th>Cao nhất</th><th>Thấp nhất</th></tr></thead>
+        <tbody id="report-table-body"><tr><td colspan="6" class="text-center text-muted py-4">Đang tải...</td></tr></tbody>
+      </table></div></div>
+    </div>
+  </div>
+
+  <!-- Users -->
+  <div id="sec-users" class="section">
+    <div class="topbar"><div><h4><i class="bi bi-people-fill me-2 text-danger"></i>Quản lý người dùng</h4></div>
+      <button class="btn btn-primary btn-sm" onclick="openUserModal()"><i class="bi bi-person-plus-fill me-1"></i>Thêm</button>
+    </div>
+    <div class="card">
+      <div class="card-header d-flex gap-2">
+        <input id="user-search" class="form-control form-control-sm" style="max-width:240px" placeholder="🔍 Tìm kiếm..." oninput="filterUsers()">
+        <select id="role-filter" class="form-select form-select-sm" style="max-width:160px" onchange="filterUsers()">
+          <option value="">Tất cả vai trò</option>
+          <option value="ADMIN">Admin</option>
+          <option value="TEACHER">Giáo viên</option>
+          <option value="STUDENT">Học sinh</option>
+        </select>
+      </div>
+      <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0">
+        <thead><tr><th>Họ tên</th><th>Username</th><th>Email</th><th>Vai trò</th><th>Thao tác</th></tr></thead>
+        <tbody id="user-tbody"></tbody>
+      </table></div></div>
+    </div>
+  </div>
+
+  <!-- Grades & Courses -->
+  <div id="sec-grades" class="section">
+    <div class="topbar"><h4><i class="bi bi-layers-fill me-2 text-danger"></i>Khối & Môn học</h4></div>
+    <div class="row g-3">
+      <div class="col-md-5">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-layers me-2"></i>Khối lớp</h6>
+            <button class="btn btn-primary btn-sm" onclick="openGradeModal()"><i class="bi bi-plus-lg"></i> Thêm</button>
+          </div>
+          <div class="card-body p-0"><ul class="list-group list-group-flush" id="grade-list">
+            <li class="list-group-item text-muted text-center py-4">Đang tải...</li>
+          </ul></div>
+        </div>
+      </div>
+      <div class="col-md-7">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-book me-2"></i>Môn học</h6>
+            <button class="btn btn-primary btn-sm" onclick="openCourseModal()"><i class="bi bi-plus-lg"></i> Thêm</button>
+          </div>
+          <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0">
+            <thead><tr><th>Môn học</th><th>Khối</th><th>Thao tác</th></tr></thead>
+            <tbody id="course-tbody"><tr><td colspan="3" class="text-muted text-center py-4">Đang tải...</td></tr></tbody>
+          </table></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reports -->
+  <div id="sec-reports" class="section">
+    <div class="topbar"><h4><i class="bi bi-bar-chart-fill me-2 text-danger"></i>Thống kê toàn trường</h4></div>
+    <div class="card"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0">
+      <thead><tr><th>Bài thi</th><th>Môn</th><th>Số HS</th><th>Điểm TB</th><th>Max</th><th>Min</th></tr></thead>
+      <tbody id="school-report-tbody"><tr><td colspan="6" class="text-center py-3 text-muted">Đang tải...</td></tr></tbody>
+    </table></div></div></div>
+  </div>
+
+  <!-- Exam Export -->
+  <div id="sec-exam-report" class="section">
+    <div class="topbar"><h4><i class="bi bi-file-earmark-excel-fill me-2 text-danger"></i>Xuất báo cáo Excel</h4></div>
+    <div class="card"><div class="card-body">
+      <p class="text-muted">Chọn bài thi để xem kết quả và xuất Excel:</p>
+      <div class="table-responsive"><table class="table table-hover">
+        <thead><tr><th>Bài thi</th><th>Môn</th><th>Số HS</th><th>Điểm TB</th><th>Thao tác</th></tr></thead>
+        <tbody id="export-tbody"></tbody>
+      </table></div>
+    </div></div>
+    <div id="exam-detail-card" class="card mt-3 d-none">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 id="exam-detail-title" class="mb-0">Chi tiết bài thi</h6>
+        <button class="btn btn-success btn-sm" id="btn-export-excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</button>
+      </div>
+      <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0">
+        <thead><tr><th>STT</th><th>Học sinh</th><th>Điểm</th><th>Chuyển tab</th><th>Thời gian nộp</th></tr></thead>
+        <tbody id="attempt-tbody"></tbody>
+      </table></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="userModalTitle">Thêm người dùng</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-user-id">
+      <div class="mb-3"><label class="form-label">Họ và tên *</label><input class="form-control" id="u-fullname" placeholder="Nguyễn Văn A"></div>
+      <div class="mb-3"><label class="form-label">Username *</label><input class="form-control" id="u-username" placeholder="nguyenvana"></div>
+      <div class="mb-3"><label class="form-label">Email</label><input class="form-control" id="u-email" type="email"></div>
+      <div class="mb-3"><label class="form-label">Mật khẩu</label><input class="form-control" id="u-password" type="password" placeholder="Để trống = không đổi"></div>
+      <div class="mb-3"><label class="form-label">Vai trò *</label>
+        <select class="form-select" id="u-role"><option value="STUDENT">Học sinh</option><option value="TEACHER">Giáo viên</option><option value="ADMIN">Admin</option></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" onclick="saveUser()">Lưu</button></div>
+  </div></div>
+</div>
+
+<!-- Grade Modal -->
+<div class="modal fade" id="gradeModal" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="gradeTitleText">Thêm khối lớp</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-grade-id">
+      <label class="form-label">Tên khối *</label>
+      <input class="form-control" id="grade-name" placeholder="Khối 10">
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" onclick="saveGrade()">Lưu</button></div>
+  </div></div>
+</div>
+
+<!-- Course Modal -->
+<div class="modal fade" id="courseModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="courseTitleText">Thêm môn học</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-course-id">
+      <div class="mb-3"><label class="form-label">Tên môn *</label><input class="form-control" id="course-name" placeholder="Toán học"></div>
+      <div class="mb-3">
+        <label class="form-label">Khối *</label>
+        <select class="form-select" id="course-grade-id">
+          <option value="">-- Chọn khối --</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" onclick="saveCourse()">Lưu</button></div>
+  </div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script>
+  let allUsers=[], allGrades=[], allCourses=[];
+
+  async function init() {
+    const u = API.user();
+    document.getElementById('sidebar-name').textContent = u.fullName||u.username;
+    document.getElementById('sidebar-avatar').textContent = (u.fullName||'A')[0].toUpperCase();
+    // Load tất cả dữ liệu ngay khi vào trang
+    await Promise.all([loadAllData(), loadDashboard()]);
+  }
+
+  async function loadAllData() {
+    // FIX: Load grades và courses ngay từ đầu
+    [allGrades, allCourses] = await Promise.all([
+      API.get('/api/admin/grades'),
+      API.get('/api/admin/courses')
+    ]);
+    allGrades = allGrades || [];
+    allCourses = allCourses || [];
+    renderGrades();
+    renderCourses();
+    // Populate grade dropdown trong modal luôn
+    updateGradeDropdown();
+  }
+
+  function updateGradeDropdown() {
+    const sel = document.getElementById('course-grade-id');
+    sel.innerHTML = '<option value="">-- Chọn khối --</option>' +
+      allGrades.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+  }
+
+  async function loadDashboard() {
+    allUsers = await API.get('/api/admin/users') || [];
+    document.getElementById('stat-users').textContent = allUsers.length;
+    document.getElementById('stat-teachers').textContent = allUsers.filter(u=>u.role==='TEACHER').length;
+    document.getElementById('stat-students').textContent = allUsers.filter(u=>u.role==='STUDENT').length;
+
+    const report = await API.get('/api/admin/reports/school');
+    const stats = report?.examStats || [];
+    document.getElementById('stat-exams').textContent = report?.totalExams || 0;
+    renderReportTable(stats, 'report-table-body');
+    renderReportTable(stats, 'school-report-tbody');
+  }
+
+  function renderReportTable(stats, tbodyId) {
+    const tbody = document.getElementById(tbodyId);
+    if (!stats.length) {
+      tbody.innerHTML=`<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-bar-chart d-block fs-2 mb-2"></i>Chưa có dữ liệu</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = stats.map(s=>`
+      <tr>
+        <td><strong>${s.examTitle}</strong></td>
+        <td><span class="badge" style="background:#eef3ff;color:#0f3460">${s.courseName}</span></td>
+        <td><span class="badge bg-primary">${s.totalStudents}</span></td>
+        <td><strong class="${s.averageScore>=5?'text-success':'text-danger'}">${s.averageScore}</strong></td>
+        <td class="text-success fw-bold">${s.maxScore}</td>
+        <td class="text-danger fw-bold">${s.minScore}</td>
+      </tr>`).join('');
+  }
+
+  // ── USERS ────────────────────────────────────────────────
+  async function loadUsers() {
+    allUsers = await API.get('/api/admin/users') || [];
+    renderUsers(allUsers);
+  }
+
+  function renderUsers(users) {
+    const tbody = document.getElementById('user-tbody');
+    if (!users.length) { tbody.innerHTML=`<tr><td colspan="5" class="text-center py-4 text-muted">Không có dữ liệu</td></tr>`; return; }
+    tbody.innerHTML = users.map(u=>`
+      <tr>
+        <td><strong>${u.fullName}</strong></td>
+        <td><code>${u.username}</code></td>
+        <td>${u.email||'–'}</td>
+        <td><span class="badge bg-${u.role}">${roleLabel(u.role)}</span></td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary me-1" onclick="editUser('${u.id}')"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${u.id}','${u.fullName}')"><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>`).join('');
+  }
+
+  function filterUsers() {
+    const q = document.getElementById('user-search').value.toLowerCase();
+    const role = document.getElementById('role-filter').value;
+    renderUsers(allUsers.filter(u=>
+      (!q||(u.fullName||'').toLowerCase().includes(q)||(u.username||'').toLowerCase().includes(q)) &&
+      (!role||u.role===role)
+    ));
+  }
+
+  function openUserModal(user=null) {
+    document.getElementById('edit-user-id').value = user?.id||'';
+    document.getElementById('u-fullname').value = user?.fullName||'';
+    document.getElementById('u-username').value = user?.username||'';
+    document.getElementById('u-email').value = user?.email||'';
+    document.getElementById('u-password').value = '';
+    document.getElementById('u-role').value = user?.role||'STUDENT';
+    document.getElementById('userModalTitle').textContent = user?'Sửa người dùng':'Thêm người dùng';
+    document.getElementById('u-username').disabled = !!user;
+    new bootstrap.Modal(document.getElementById('userModal')).show();
+  }
+  function editUser(id) { openUserModal(allUsers.find(u=>u.id===id)); }
+
+  async function saveUser() {
+    const id = document.getElementById('edit-user-id').value;
+    const dto = {
+      fullName: document.getElementById('u-fullname').value.trim(),
+      username: document.getElementById('u-username').value.trim(),
+      email: document.getElementById('u-email').value.trim(),
+      password: document.getElementById('u-password').value,
+      role: document.getElementById('u-role').value
+    };
+    if (!dto.fullName||(!id&&!dto.username)) { toast('Vui lòng điền đầy đủ','error'); return; }
+    if (id) await API.put(`/api/admin/users/${id}`,dto); else await API.post('/api/admin/users',dto);
+    bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+    toast(id?'Đã cập nhật':'Đã thêm người dùng'); loadUsers(); loadDashboard();
+  }
+
+  async function deleteUser(id,name) {
+    if (!confirm(`Xóa người dùng "${name}"?`)) return;
+    await API.del(`/api/admin/users/${id}`);
+    toast('Đã xóa'); loadUsers(); loadDashboard();
+  }
+
+  // ── GRADES ───────────────────────────────────────────────
+  function renderGrades() {
+    const el = document.getElementById('grade-list');
+    if (!allGrades.length) {
+      el.innerHTML='<li class="list-group-item text-muted text-center py-3"><i class="bi bi-inbox me-2"></i>Chưa có khối nào</li>'; return;
+    }
+    el.innerHTML = allGrades.map(g=>`
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-layers me-2 text-primary"></i><strong>${g.name}</strong></span>
+        <div class="d-flex gap-1">
+          <button class="btn btn-sm btn-outline-primary" onclick="editGrade('${g.id}','${g.name}')"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteGrade('${g.id}','${g.name}')"><i class="bi bi-trash"></i></button>
+        </div>
+      </li>`).join('');
+  }
+
+  function renderCourses() {
+    const tbody = document.getElementById('course-tbody');
+    if (!allCourses.length) {
+      tbody.innerHTML='<tr><td colspan="3" class="text-muted text-center py-3"><i class="bi bi-inbox me-2"></i>Chưa có môn học nào</td></tr>'; return;
+    }
+    tbody.innerHTML = allCourses.map(c=>`
+      <tr>
+        <td><i class="bi bi-book me-2 text-success"></i><strong>${c.name}</strong></td>
+        <td><span class="badge" style="background:#eef3ff;color:#0f3460">${c.grade?.name||'–'}</span></td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary me-1" onclick="editCourse('${c.id}','${c.name}','${c.grade?.id||''}')"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteCourse('${c.id}','${c.name}')"><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>`).join('');
+  }
+
+  function openGradeModal(id='',name='') {
+    document.getElementById('edit-grade-id').value = id;
+    document.getElementById('grade-name').value = name;
+    document.getElementById('gradeTitleText').textContent = id?'Sửa khối lớp':'Thêm khối lớp';
+    new bootstrap.Modal(document.getElementById('gradeModal')).show();
+  }
+  function editGrade(id,name) { openGradeModal(id,name); }
+
+  async function saveGrade() {
+    const id = document.getElementById('edit-grade-id').value;
+    const name = document.getElementById('grade-name').value.trim();
+    if (!name) { toast('Nhập tên khối','error'); return; }
+    if (id) await API.put(`/api/admin/grades/${id}`,{name}); else await API.post('/api/admin/grades',{name});
+    bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide();
+    toast('Đã lưu khối');
+    await loadAllData(); // reload lại grades + courses + dropdown
+  }
+
+  async function deleteGrade(id,name) {
+    if (!confirm(`Xóa khối "${name}"? Các môn học thuộc khối này cũng bị xóa!`)) return;
+    await API.del(`/api/admin/grades/${id}`);
+    toast('Đã xóa khối'); await loadAllData();
+  }
+
+  function openCourseModal(id='',name='',gradeId='') {
+    document.getElementById('edit-course-id').value = id;
+    document.getElementById('course-name').value = name;
+    document.getElementById('courseTitleText').textContent = id?'Sửa môn học':'Thêm môn học';
+    // FIX: Luôn refresh dropdown từ allGrades trước khi mở modal
+    updateGradeDropdown();
+    if (gradeId) document.getElementById('course-grade-id').value = gradeId;
+    new bootstrap.Modal(document.getElementById('courseModal')).show();
+  }
+  function editCourse(id,name,gradeId) { openCourseModal(id,name,gradeId); }
+
+  async function saveCourse() {
+    const id = document.getElementById('edit-course-id').value;
+    const name = document.getElementById('course-name').value.trim();
+    const gradeId = document.getElementById('course-grade-id').value;
+    if (!name||!gradeId) { toast('Nhập tên môn và chọn khối','error'); return; }
+    if (id) await API.put(`/api/admin/courses/${id}`,{name,gradeId});
+    else await API.post('/api/admin/courses',{name,gradeId});
+    bootstrap.Modal.getInstance(document.getElementById('courseModal')).hide();
+    toast('Đã lưu môn học'); await loadAllData();
+  }
+
+  async function deleteCourse(id,name) {
+    if (!confirm(`Xóa môn học "${name}"?`)) return;
+    await API.del(`/api/admin/courses/${id}`);
+    toast('Đã xóa'); await loadAllData();
+  }
+
+  // ── EXAM EXPORT ──────────────────────────────────────────
+  async function loadExamExport() {
+    const report = await API.get('/api/admin/reports/school') || {};
+    const stats = report.examStats || [];
+    document.getElementById('export-tbody').innerHTML = stats.length ? stats.map(e=>`
+      <tr>
+        <td><strong>${e.examTitle}</strong></td>
+        <td>${e.courseName}</td>
+        <td>${e.totalStudents}</td>
+        <td><strong class="${e.averageScore>=5?'text-success':'text-danger'}">${e.averageScore}</strong></td>
+        <td>
+          <button class="btn btn-sm btn-primary me-1" onclick="viewExamDetail('${e.examId}','${e.examTitle}')">
+            <i class="bi bi-eye me-1"></i>Chi tiết
+          </button>
+          <button class="btn btn-sm btn-success" onclick="API.download('/api/admin/reports/exam/${e.examId}/excel','${e.examTitle}.xlsx')">
+            <i class="bi bi-file-earmark-excel"></i>
+          </button>
+        </td>
+      </tr>`).join('') :
+      '<tr><td colspan="5" class="text-muted text-center py-3">Chưa có dữ liệu</td></tr>';
+  }
+
+  async function viewExamDetail(examId, title) {
+    const report = await API.get(`/api/admin/reports/exam/${examId}`);
+    document.getElementById('exam-detail-title').textContent = '📊 ' + title;
+    document.getElementById('exam-detail-card').classList.remove('d-none');
+    document.getElementById('btn-export-excel').onclick = ()=>
+      API.download(`/api/admin/reports/exam/${examId}/excel`,`${title}.xlsx`);
+    const scores = report.scores || [];
+    document.getElementById('attempt-tbody').innerHTML = scores.map((s,i)=>`
+      <tr>
+        <td>${i+1}</td>
+        <td><strong>${s.studentName}</strong></td>
+        <td><span class="badge ${s.score>=5?'bg-success':'bg-danger'}">${s.score}</span></td>
+        <td>${s.submitTime?new Date(s.submitTime).toLocaleString('vi-VN'):'–'}</td>
+      </tr>`).join('') || '<tr><td colspan="5" class="text-muted text-center">Chưa có bài nộp</td></tr>';
+  }
+
+  // Navigation
+  const origShow = showSection;
+  window.showSection = function(id) {
+    origShow(id);
+    if (id==='sec-users') loadUsers();
+    else if (id==='sec-grades') loadAllData();
+    else if (id==='sec-reports') loadDashboard();
+    else if (id==='sec-exam-report') loadExamExport();
+  };
+
+  function roleLabel(r) { return {ADMIN:'Admin',TEACHER:'Giáo viên',STUDENT:'Học sinh'}[r]||r; }
+
+  if (!API.token()||API.user().role!=='ADMIN') location.href='/';
+  else init();
+</script>
+</body>
+</html>

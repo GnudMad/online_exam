@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Học sinh – Hệ Thống Thi Online</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ═══ DASHBOARD VIEW ═══════════════════════════════════ -->
+<div id="dashboard-view">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🎓</div>
+      <div><h5>Thi Trắc Nghiệm</h5><small>Học sinh</small></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Thi cử</div>
+      <a class="nav-link active" data-section="sec-exams" onclick="showSection('sec-exams')">
+        <i class="bi bi-journal-arrow-down"></i> Bài thi mở
+      </a>
+      <a class="nav-link" data-section="sec-history" onclick="showSection('sec-history')">
+        <i class="bi bi-clock-history"></i> Lịch sử thi
+      </a>
+      <div class="nav-section-title">Học tập</div>
+      <a class="nav-link" data-section="sec-materials" onclick="showSection('sec-materials')">
+        <i class="bi bi-folder-fill"></i> Tài liệu tham khảo
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar" id="sidebar-avatar">S</div>
+        <div><div class="user-name" id="sidebar-name">Học sinh</div>
+          <div class="user-role">Student</div></div>
+        <button class="btn btn-sm ms-auto p-1" onclick="API.logout()"
+                style="background:rgba(255,255,255,0.1);border:none;color:#fff">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- ── Available Exams ────────────────────────────── -->
+    <div id="sec-exams" class="section active">
+      <div class="topbar">
+        <div><h4><i class="bi bi-journal-arrow-down me-2 text-danger"></i>Bài thi đang mở</h4>
+          <p class="text-muted small mb-0">Chọn bài thi để bắt đầu làm</p>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="loadOpenExams()">
+          <i class="bi bi-arrow-clockwise"></i> Làm mới
+        </button>
+      </div>
+      <div class="row g-3" id="open-exam-cards"></div>
+    </div>
+
+    <!-- ── History ────────────────────────────────────── -->
+    <div id="sec-history" class="section">
+      <div class="topbar"><h4><i class="bi bi-clock-history me-2 text-danger"></i>Lịch sử thi</h4></div>
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Bài thi</th><th>Điểm</th><th>Kết quả</th><th>Thời gian</th><th></th></tr></thead>
+              <tbody id="history-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Materials ─────────────────────────────────── -->
+    <div id="sec-materials" class="section">
+      <div class="topbar"><h4><i class="bi bi-folder-fill me-2 text-danger"></i>Tài liệu tham khảo</h4></div>
+      <div class="mb-3">
+        <select class="form-select" style="max-width:280px" id="mat-course-sel" onchange="loadMaterials()">
+          <option value="">-- Chọn môn học --</option>
+        </select>
+      </div>
+      <div class="row g-3" id="material-cards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EXAM TAKING VIEW ══════════════════════════════════ -->
+<div id="exam-view" class="d-none">
+  <!-- Timer Bar -->
+  <div class="timer-bar">
+    <span class="text-white-50 small">⏱ Thời gian còn lại:</span>
+    <div class="timer-display" id="timer-display">00:00</div>
+    <span class="text-white-50 small" id="timer-exam-title"></span>
+    <button class="btn btn-danger btn-sm ms-4" onclick="confirmSubmit()">
+      <i class="bi bi-box-arrow-up me-1"></i>Nộp bài
+    </button>
+  </div>
+
+  <div style="padding-top:60px; background:#f0f2f5; min-height:100vh;">
+    <div class="exam-wrapper p-4">
+      <!-- Progress -->
+      <div class="card mb-3">
+        <div class="card-body py-2">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="text-muted">Tiến độ: <span id="answered-count">0</span>/<span id="total-count">0</span> câu</small>
+            <small class="text-muted" id="tab-switch-count"></small>
+          </div>
+          <div class="progress" style="height:6px">
+            <div class="progress-bar bg-success" id="progress-bar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Questions -->
+      <div id="exam-questions-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RESULT VIEW ═══════════════════════════════════════ -->
+<div id="result-view" class="d-none" style="min-height:100vh;background:#f0f2f5;padding:30px 0">
+  <div class="container" style="max-width:750px">
+    <div class="card mb-4">
+      <div class="card-body text-center py-5">
+        <h4 class="mb-4" id="result-exam-title">Kết quả bài thi</h4>
+        <div class="score-circle mb-4">
+          <div class="score-value" id="result-score">0</div>
+          <div class="score-label">điểm</div>
+        </div>
+        <div class="row g-3 mt-2">
+          <div class="col-4">
+            <div class="stat-card text-center" style="border-color:#3498db">
+              <div class="stat-value" style="color:#3498db" id="res-total">0</div>
+              <div class="stat-label">Tổng câu</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="stat-card text-center" style="border-color:#27ae60">
+              <div class="stat-value text-success" id="res-correct">0</div>
+              <div class="stat-label">Đúng</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="stat-card text-center" style="border-color:#e74c3c">
+              <div class="stat-value text-danger" id="res-wrong">0</div>
+              <div class="stat-label">Sai</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary mt-4" onclick="backToDashboard()">
+          <i class="bi bi-house me-2"></i>Về trang chủ
+        </button>
+        <button class="btn btn-outline-secondary mt-4 ms-2" onclick="toggleDetailResult()">
+          <i class="bi bi-list-check me-2"></i>Xem đáp án chi tiết
+        </button>
+      </div>
+    </div>
+    <div id="result-detail" class="d-none">
+      <h5 class="mb-3">Chi tiết từng câu:</h5>
+      <div id="result-questions"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script>
+  let currentAttemptId = null, timerInterval = null, tabSwitchCount = 0;
+  let examAnswers = {}, examQuestions = [];
+
+  async function init() {
+    const u = API.user();
+    document.getElementById('sidebar-name').textContent = u.fullName || u.username;
+    document.getElementById('sidebar-avatar').textContent = (u.fullName||'S')[0].toUpperCase();
+    loadOpenExams();
+    loadCourses();
+  }
+
+  async function loadCourses() {
+    const courses = await API.get('/api/student/courses') || [];
+    const sel = document.getElementById('mat-course-sel');
+    sel.innerHTML = '<option value="">-- Chọn môn học --</option>' +
+      courses.map(c => `<option value="${c.id}">${c.name} (${c.grade?.name||''})</option>`).join('');
+  }
+
+  // ── Open Exams ────────────────────────────────────────
+  async function loadOpenExams() {
+    const exams = await API.get('/api/student/exams') || [];
+    const container = document.getElementById('open-exam-cards');
+    if (!exams.length) {
+      container.innerHTML = `<div class="col-12"><div class="empty-state">
+        <i class="bi bi-journal-x"></i>Hiện chưa có bài thi nào đang mở</div></div>`;
+      return;
+    }
+    // Load danh sách bài đã nộp để check
+    const history = await API.get('/api/student/history') || [];
+    const submittedExamIds = new Set(
+      history.filter(h => h.submitted).map(h => h.exam?.id)
+    );
+
+    const now = new Date();
+    container.innerHTML = exams.map(e => {
+      const started = !e.startTime || new Date(e.startTime) <= now;
+      const notYet = e.startTime && new Date(e.startTime) > now;
+      const ended  = e.endTime && new Date(e.endTime) < now;
+      const alreadyDone = submittedExamIds.has(e.id);
+
+      let statusBadge, btnHtml;
+
+      if (alreadyDone) {
+        statusBadge = '<span class="badge bg-secondary">Đã nộp bài</span>';
+        btnHtml = `<button class="btn btn-secondary w-100" disabled>
+          <i class="bi bi-check-circle me-1"></i>Đã hoàn thành</button>`;
+      } else if (notYet) {
+        const startStr = new Date(e.startTime).toLocaleString('vi-VN');
+        statusBadge = '<span class="badge bg-warning text-dark">Chưa đến giờ</span>';
+        btnHtml = `<button class="btn btn-warning w-100" disabled>
+          <i class="bi bi-clock me-1"></i>Bắt đầu lúc ${startStr}</button>`;
+      } else if (ended) {
+        statusBadge = '<span class="badge bg-danger">Đã kết thúc</span>';
+        btnHtml = `<button class="btn btn-secondary w-100" disabled>
+          <i class="bi bi-x-circle me-1"></i>Đã kết thúc</button>`;
+      } else {
+        statusBadge = '<span class="badge bg-OPEN">Đang mở</span>';
+        btnHtml = `<button class="btn btn-primary w-100" onclick="enterExam('${e.id}','${e.title}')">
+          <i class="bi bi-play-fill me-1"></i>Vào làm bài</button>`;
+      }
+
+      return `
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm ${alreadyDone?'opacity-75':''}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              ${statusBadge}
+              <small class="text-muted">${e.duration} phút</small>
+            </div>
+            <h6 class="fw-bold mb-1">${e.title}</h6>
+            <p class="text-muted small mb-2">
+              <i class="bi bi-book me-1"></i>${e.course?.name||''} – ${e.course?.grade?.name||''}
+            </p>
+            <div class="d-flex justify-content-between text-muted small mb-3">
+              <span><i class="bi bi-question-circle me-1"></i>${e.questionCount} câu hỏi</span>
+              ${e.startTime ? `<span><i class="bi bi-clock me-1"></i>${new Date(e.startTime).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span>` : ''}
+            </div>
+            ${btnHtml}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Start Exam ─────────────────────────────────────────
+  async function enterExam(examId, title) {
+    if (!confirm(`Bắt đầu làm bài:\n"${title}"\n\nLưu ý: Hệ thống sẽ ghi lại khi bạn chuyển tab!`)) return;
+    const session = await API.post(`/api/student/exams/${examId}/start`, {});
+    if (!session) { toast('Không kết nối được server', 'error'); return; }
+    if (session.error || (session._status && session._status >= 400)) {
+      const msg = session.message || session.error || '';
+      if (msg.includes('BAN_DA_NOI_BAI') || msg.includes('đã được nộp') || msg.includes('đã nộp')) {
+        toast('Bạn đã nộp bài thi này rồi, không thể làm lại!', 'error');
+        loadOpenExams(); // refresh để disable nút
+      } else {
+        toast(msg || 'Không thể vào làm bài lúc này', 'error');
+      }
+      return;
+    }
+    startExamUI(session);
+  }
+
+  function startExamUI(session) {
+    currentAttemptId = session.attemptId;
+    examQuestions = session.questions;
+    examAnswers = {};
+    tabSwitchCount = 0;
+
+    document.getElementById('dashboard-view').classList.add('d-none');
+    document.getElementById('exam-view').classList.remove('d-none');
+    document.getElementById('result-view').classList.add('d-none');
+    document.getElementById('timer-exam-title').textContent = session.examTitle;
+    document.getElementById('total-count').textContent = examQuestions.length;
+
+    renderExamQuestions();
+    startTimer(session.duration * 60);
+    listenTabSwitch();
+  }
+
+  function renderExamQuestions() {
+    const container = document.getElementById('exam-questions-container');
+    container.innerHTML = examQuestions.map((q, i) => `
+      <div class="question-card" id="qcard-${i}">
+        <div class="mb-3">
+          <span class="question-number">${i+1}</span>
+          <span class="fw-500">${q.content}</span>
+        </div>
+        <div>
+          ${(q.options||[]).map(opt => `
+            <label class="option-label" id="opt-${i}-${opt.id}">
+              <input type="radio" name="q_${i}" value="${opt.id}"
+                     onchange="selectAnswer('${q.id}','${opt.id}',${i})">
+              <span class="badge bg-light text-dark border me-1">${opt.label||''}</span>
+              ${opt.content}
+            </label>`).join('')}
+        </div>
+      </div>`).join('');
+    updateProgress();
+  }
+
+  function selectAnswer(questionId, optionId, qIndex) {
+    examAnswers[questionId] = optionId;
+    // Highlight selected
+    document.querySelectorAll(`[name="q_${qIndex}"]`).forEach(r => {
+      const lbl = r.closest('.option-label');
+      lbl.classList.toggle('selected', r.value === optionId);
+    });
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const answered = Object.keys(examAnswers).length;
+    const total = examQuestions.length;
+    document.getElementById('answered-count').textContent = answered;
+    document.getElementById('progress-bar').style.width = (answered/total*100) + '%';
+  }
+
+  function startTimer(totalSeconds) {
+    let remaining = totalSeconds;
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      remaining--;
+      const m = String(Math.floor(remaining/60)).padStart(2,'0');
+      const s = String(remaining%60).padStart(2,'0');
+      const disp = document.getElementById('timer-display');
+      disp.textContent = `${m}:${s}`;
+      if (remaining <= 60) disp.classList.add('warning');
+      else disp.classList.remove('warning');
+      if (remaining <= 0) { clearInterval(timerInterval); autoSubmit(); }
+    }, 1000);
+  }
+
+  function listenTabSwitch() {
+    document.addEventListener('visibilitychange', onVisibilityChange);
+  }
+
+  // Lưu thời điểm rời trang để tính duration khi quay lại
+  let tabLeaveTime = null;
+
+  function onVisibilityChange() {
+    if (document.hidden && currentAttemptId) {
+      // === Rời trang ===
+      tabSwitchCount++;
+      tabLeaveTime = new Date();
+      const timeStr = tabLeaveTime.toLocaleTimeString('vi-VN');
+
+      // Cố lấy thông tin referrer / context khi rời trang
+      // Không thể lấy tên tab đích do browser security, nhưng lấy được thời gian
+      const desc = `Rời trang thi lúc ${timeStr}`;
+
+      document.getElementById('tab-switch-count').textContent = `⚠️ Đã rời trang: ${tabSwitchCount} lần`;
+      API.post(`/api/student/attempts/${currentAttemptId}/tab-switch`, {
+        description: desc,
+        switchNumber: tabSwitchCount
+      });
+
+    } else if (!document.hidden && tabLeaveTime && currentAttemptId) {
+      // === Quay lại trang ===
+      const returnTime = new Date();
+      const duration = Math.round((returnTime - tabLeaveTime) / 1000);
+      const returnStr = returnTime.toLocaleTimeString('vi-VN');
+
+      // Ghi thêm log "quay lại" với thời gian vắng mặt
+      const desc = `Quay lại trang lúc ${returnStr} (vắng ${duration}s)`;
+      API.post(`/api/student/attempts/${currentAttemptId}/tab-switch`, {
+        description: desc,
+        switchNumber: tabSwitchCount
+      });
+      tabLeaveTime = null;
+    }
+  }
+
+  function confirmSubmit() {
+    const answered = Object.keys(examAnswers).length;
+    const total = examQuestions.length;
+    const unanswered = total - answered;
+    const msg = unanswered > 0
+      ? `Bạn còn ${unanswered} câu chưa trả lời.\n\nBạn có chắc chắn muốn nộp bài không?`
+      : 'Bạn có chắc chắn muốn nộp bài không?';
+    if (confirm(msg)) submitExam();
+  }
+
+  async function autoSubmit() {
+    toast('Hết giờ! Đang nộp bài...', 'info');
+    await submitExam();
+  }
+
+  async function submitExam() {
+    if (!currentAttemptId) return;
+    clearInterval(timerInterval);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    const result = await API.post(`/api/student/attempts/${currentAttemptId}/submit`,
+      { answers: examAnswers });
+    if (!result || result.error) { toast(result?.error || 'Lỗi nộp bài','error'); return; }
+    showResult(result);
+  }
+
+  function showResult(result) {
+    document.getElementById('exam-view').classList.add('d-none');
+    document.getElementById('result-view').classList.remove('d-none');
+    document.getElementById('result-exam-title').textContent = '🎉 ' + result.examTitle;
+    document.getElementById('result-score').textContent = result.score.toFixed(1);
+    document.getElementById('res-total').textContent = result.totalQuestions;
+    document.getElementById('res-correct').textContent = result.correctAnswers;
+    document.getElementById('res-wrong').textContent = result.totalQuestions - result.correctAnswers;
+
+    // Render detail
+    const qrs = result.questionResults || [];
+    document.getElementById('result-questions').innerHTML = qrs.map((qr, i) => `
+      <div class="question-card mb-3 ${qr.correct?'border-success':'border-danger'}" style="border-left:4px solid">
+        <div class="d-flex gap-2 mb-2">
+          <span class="badge ${qr.correct?'bg-success':'bg-danger'}">${qr.correct?'✓':'✗'}</span>
+          <span class="fw-500">${i+1}. ${qr.questionContent}</span>
+        </div>
+        <div class="ms-4">
+          <div class="text-muted small">Bạn chọn: <span class="${qr.correct?'text-success fw-bold':'text-danger fw-bold'}">${qr.selectedOption||'(Không chọn)'}</span></div>
+          ${!qr.correct ? `<div class="text-muted small">Đáp án đúng: <span class="text-success fw-bold">${qr.correctOption||''}</span></div>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  function toggleDetailResult() {
+    const el = document.getElementById('result-detail');
+    el.classList.toggle('d-none');
+  }
+
+  function backToDashboard() {
+    currentAttemptId = null;
+    document.getElementById('result-view').classList.add('d-none');
+    document.getElementById('dashboard-view').classList.remove('d-none');
+    loadOpenExams(); loadHistory();
+  }
+
+  // ── History ────────────────────────────────────────────
+  async function loadHistory() {
+    const history = await API.get('/api/student/history') || [];
+    const tbody = document.getElementById('history-tbody');
+    if (!history.length) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">
+        <i class="bi bi-inbox"></i>Chưa có lịch sử thi</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = history.filter(h => h.submitted).map(h => `
+      <tr>
+        <td><strong>${h.exam?.title||'–'}</strong><br>
+          <small class="text-muted">${h.exam?.course?.name||''}</small></td>
+        <td><span class="badge ${h.score>=5?'bg-success':'bg-danger'} fs-6">${h.score.toFixed(1)}</span></td>
+        <td>${h.score>=5
+          ? '<span class="badge bg-success">✓ Đạt</span>'
+          : '<span class="badge bg-danger">✗ Chưa đạt</span>'}</td>
+        <td class="text-muted small">${h.submitTime?new Date(h.submitTime).toLocaleString('vi-VN'):'–'}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary" onclick="viewAttemptResult('${h.id}')">
+            <i class="bi bi-eye"></i> Chi tiết
+          </button>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted py-3">Chưa có kết quả</td></tr>';
+  }
+
+  async function viewAttemptResult(attemptId) {
+    const result = await API.get(`/api/student/attempts/${attemptId}/result`);
+    currentAttemptId = attemptId;
+    showResult(result);
+    document.getElementById('dashboard-view').classList.add('d-none');
+    document.getElementById('result-view').classList.remove('d-none');
+  }
+
+  // ── Materials ──────────────────────────────────────────
+  async function loadMaterials() {
+    const courseId = document.getElementById('mat-course-sel').value;
+    if (!courseId) { document.getElementById('material-cards').innerHTML = ''; return; }
+    const mats = await API.get(`/api/student/materials/course/${courseId}`) || [];
+    const container = document.getElementById('material-cards');
+    if (!mats.length) {
+      container.innerHTML = `<div class="col-12"><div class="empty-state">
+        <i class="bi bi-folder2-open"></i>Chưa có tài liệu cho môn này</div></div>`;
+      return;
+    }
+    container.innerHTML = mats.map(m => `
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-body text-center py-4">
+            <i class="bi bi-file-earmark-pdf-fill fs-1 text-danger mb-2 d-block"></i>
+            <h6 class="fw-bold">${m.title}</h6>
+            <p class="text-muted small">${m.uploadDate?new Date(m.uploadDate).toLocaleDateString('vi-VN'):''}</p>
+            ${m.fileUrl ? `<a href="${m.fileUrl}" class="btn btn-outline-primary btn-sm" target="_blank">
+              <i class="bi bi-download me-1"></i>Tải về</a>` : '<span class="text-muted small">Không có file</span>'}
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── Navigation ──────────────────────────────────────────
+  const origShow = showSection;
+  window.showSection = function(id) {
+    origShow(id);
+    if (id === 'sec-history') loadHistory();
+  };
+
+  if (!API.token()) location.href = '/';
+  else init();
+</script>
+</body>
+</html>

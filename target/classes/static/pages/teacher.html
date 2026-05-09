@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Giáo viên – Hệ Thống Thi Online</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">📚</div>
+    <div><h5>Thi Trắc Nghiệm</h5><small>Giáo viên</small></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">Quản lý</div>
+    <a class="nav-link active" data-section="sec-questions" onclick="showSection('sec-questions')">
+      <i class="bi bi-question-circle-fill"></i> Ngân hàng câu hỏi
+    </a>
+    <a class="nav-link" data-section="sec-exams" onclick="showSection('sec-exams')">
+      <i class="bi bi-journal-check"></i> Quản lý bài thi
+    </a>
+    <a class="nav-link" data-section="sec-materials" onclick="showSection('sec-materials')">
+      <i class="bi bi-folder-fill"></i> Tài liệu ôn tập
+    </a>
+    <div class="nav-section-title">Kết quả</div>
+    <a class="nav-link" data-section="sec-results" onclick="showSection('sec-results')">
+      <i class="bi bi-bar-chart-fill"></i> Xem điểm học sinh
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" id="sidebar-avatar">T</div>
+      <div><div class="user-name" id="sidebar-name">Giáo viên</div>
+        <div class="user-role">Teacher</div></div>
+      <button class="btn btn-sm ms-auto p-1" onclick="API.logout()"
+              style="background:rgba(255,255,255,0.1);border:none;color:#fff">
+        <i class="bi bi-box-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── Questions ─────────────────────────────────── -->
+  <div id="sec-questions" class="section active">
+    <div class="topbar">
+      <div><h4><i class="bi bi-question-circle-fill me-2 text-danger"></i>Ngân hàng câu hỏi</h4></div>
+      <button class="btn btn-primary btn-sm" onclick="openQuestionModal()">
+        <i class="bi bi-plus-lg me-1"></i>Thêm câu hỏi
+      </button>
+    </div>
+    <div class="card mb-3">
+      <div class="card-body py-2">
+        <div class="d-flex gap-2">
+          <select class="form-select form-select-sm" style="max-width:200px"
+                  id="q-course-filter" onchange="loadQuestions()">
+            <option value="">-- Chọn môn học --</option>
+          </select>
+          <span class="text-muted small align-self-center" id="q-count"></span>
+        </div>
+      </div>
+    </div>
+    <div id="question-list"></div>
+  </div>
+
+  <!-- ── Exams ──────────────────────────────────────── -->
+  <div id="sec-exams" class="section">
+    <div class="topbar">
+      <div><h4><i class="bi bi-journal-check me-2 text-danger"></i>Quản lý bài thi</h4></div>
+      <button class="btn btn-primary btn-sm" onclick="openExamModal()">
+        <i class="bi bi-plus-lg me-1"></i>Tạo bài thi
+      </button>
+    </div>
+    <div class="row g-3" id="exam-cards"></div>
+  </div>
+
+  <!-- ── Materials ─────────────────────────────────── -->
+  <div id="sec-materials" class="section">
+    <div class="topbar">
+      <div><h4><i class="bi bi-folder-fill me-2 text-danger"></i>Tài liệu ôn tập</h4></div>
+      <button class="btn btn-primary btn-sm" onclick="openMaterialModal()">
+        <i class="bi bi-upload me-1"></i>Upload tài liệu
+      </button>
+    </div>
+    <div class="card">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead><tr><th>Tên tài liệu</th><th>Môn học</th><th>Ngày upload</th><th>Thao tác</th></tr></thead>
+            <tbody id="material-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Results ────────────────────────────────────── -->
+  <div id="sec-results" class="section">
+    <div class="topbar"><h4><i class="bi bi-bar-chart-fill me-2 text-danger"></i>Kết quả học sinh</h4></div>
+    <div class="card mb-3">
+      <div class="card-body py-2">
+        <select class="form-select form-select-sm" style="max-width:300px"
+                id="result-exam-select" onchange="loadExamResult()">
+          <option value="">-- Chọn bài thi --</option>
+        </select>
+      </div>
+    </div>
+    <div id="result-detail" class="d-none">
+      <div class="row g-2 mb-3" id="result-stats"></div>
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">Danh sách điểm</h6>
+          <button class="btn btn-success btn-sm" id="btn-dl-excel">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>STT</th><th>Học sinh</th><th>Điểm</th><th>Thời gian nộp</th></tr></thead>
+              <tbody id="result-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODALS ══════════════════════════════════════════════ -->
+<!-- Question Modal -->
+<div class="modal fade" id="questionModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Thêm câu hỏi</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-q-id">
+        <div class="mb-3">
+          <label class="form-label">Môn học *</label>
+          <select class="form-select" id="q-course-id"></select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nội dung câu hỏi *</label>
+          <textarea class="form-control" id="q-content" rows="3"
+                    placeholder="Nhập nội dung câu hỏi..."></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Độ khó</label>
+          <select class="form-select" id="q-difficulty">
+            <option value="EASY">Dễ</option>
+            <option value="MEDIUM" selected>Trung bình</option>
+            <option value="HARD">Khó</option>
+          </select>
+        </div>
+        <label class="form-label">Đáp án (chọn đáp án đúng) *</label>
+        <div id="options-container">
+          <div class="option-row d-flex gap-2 mb-2 align-items-center" data-idx="0">
+            <span class="badge bg-primary" style="min-width:26px;text-align:center">A</span>
+            <input type="text" class="form-control option-text" data-label="A" placeholder="Nhập nội dung đáp án A...">
+            <div class="form-check ms-1 text-nowrap">
+              <input class="form-check-input" type="radio" name="correct" value="0" id="r0">
+              <label class="form-check-label small fw-bold text-success" for="r0">✓ Đúng</label>
+            </div>
+          </div>
+          <div class="option-row d-flex gap-2 mb-2 align-items-center" data-idx="1">
+            <span class="badge bg-secondary" style="min-width:26px;text-align:center">B</span>
+            <input type="text" class="form-control option-text" data-label="B" placeholder="Nhập nội dung đáp án B...">
+            <div class="form-check ms-1 text-nowrap">
+              <input class="form-check-input" type="radio" name="correct" value="1" id="r1">
+              <label class="form-check-label small fw-bold text-success" for="r1">✓ Đúng</label>
+            </div>
+          </div>
+          <div class="option-row d-flex gap-2 mb-2 align-items-center" data-idx="2">
+            <span class="badge" style="background:#f39c12;min-width:26px;text-align:center">C</span>
+            <input type="text" class="form-control option-text" data-label="C" placeholder="Nhập nội dung đáp án C...">
+            <div class="form-check ms-1 text-nowrap">
+              <input class="form-check-input" type="radio" name="correct" value="2" id="r2">
+              <label class="form-check-label small fw-bold text-success" for="r2">✓ Đúng</label>
+            </div>
+          </div>
+          <div class="option-row d-flex gap-2 mb-2 align-items-center" data-idx="3">
+            <span class="badge bg-danger" style="min-width:26px;text-align:center">D</span>
+            <input type="text" class="form-control option-text" data-label="D" placeholder="Nhập nội dung đáp án D...">
+            <div class="form-check ms-1 text-nowrap">
+              <input class="form-check-input" type="radio" name="correct" value="3" id="r3">
+              <label class="form-check-label small fw-bold text-success" for="r3">✓ Đúng</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button class="btn btn-primary" onclick="saveQuestion()">Lưu câu hỏi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Exam Modal -->
+<div class="modal fade" id="examModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="examModalTitle">Tạo bài thi</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-exam-id">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Tên bài thi *</label>
+            <input class="form-control" id="exam-title" placeholder="Kiểm tra 15 phút Toán học">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Môn học *</label>
+            <select class="form-select" id="exam-course-id" onchange="loadQuestionsForExam()"></select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Thời gian (phút) *</label>
+            <input class="form-control" id="exam-duration" type="number" min="1" value="15">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Số câu hỏi *</label>
+            <input class="form-control" id="exam-qcount" type="number" min="1" value="10">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Bắt đầu</label>
+            <input class="form-control" id="exam-start" type="datetime-local">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Kết thúc</label>
+            <input class="form-control" id="exam-end" type="datetime-local">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Chọn câu hỏi <span class="text-muted small">(chọn từ ngân hàng)</span></label>
+            <div id="exam-question-list" style="max-height:250px;overflow-y:auto;border:1.5px solid #eee;border-radius:8px;padding:10px;">
+              <p class="text-muted text-center">Chọn môn học để xem câu hỏi</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button class="btn btn-primary" onclick="saveExam()">Lưu bài thi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Material Modal -->
+<div class="modal fade" id="materialModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Upload tài liệu</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Tiêu đề *</label>
+          <input class="form-control" id="mat-title" placeholder="Tài liệu ôn tập Chương 1">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Môn học *</label>
+          <select class="form-select" id="mat-course-id"></select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">File</label>
+          <input class="form-control" id="mat-file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx">
+          <div class="form-text">Hỗ trợ: PDF, Word, PowerPoint</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button class="btn btn-primary" onclick="saveMaterial()">Upload</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script>
+  let allCourses = [], allQuestions = [], myExams = [];
+
+  async function init() {
+    const u = API.user();
+    document.getElementById('sidebar-name').textContent = u.fullName || u.username;
+    document.getElementById('sidebar-avatar').textContent = (u.fullName||'T')[0].toUpperCase();
+    await loadCourses();
+    await loadMyExams();
+  }
+
+  async function loadCourses() {
+    allCourses = await API.get('/api/teacher/courses') || [];
+    if (!allCourses.length) {
+      // Thử lấy từ endpoint khác nếu empty
+      allCourses = await API.get('/api/student/courses') || [];
+    }
+    const opts = allCourses.map(c =>
+      `<option value="${c.id}">${c.name}${c.grade ? ' – ' + c.grade.name : ''}</option>`
+    ).join('');
+    const placeholder = '<option value="">-- Chọn môn học --</option>';
+    ['q-course-id','exam-course-id','mat-course-id'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = placeholder + opts;
+    });
+    document.getElementById('q-course-filter').innerHTML = placeholder + opts;
+  }
+
+  // ── Questions ────────────────────────────────────────────
+  async function loadQuestions() {
+    const courseId = document.getElementById('q-course-filter').value;
+    if (!courseId) { document.getElementById('question-list').innerHTML = '<div class="empty-state"><i class="bi bi-question-circle"></i>Chọn môn học để xem câu hỏi</div>'; return; }
+    allQuestions = await API.get(`/api/teacher/questions/course/${courseId}`) || [];
+    document.getElementById('q-count').textContent = `${allQuestions.length} câu hỏi`;
+    if (!allQuestions.length) {
+      document.getElementById('question-list').innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i>Chưa có câu hỏi</div>'; return;
+    }
+    document.getElementById('question-list').innerHTML = allQuestions.map((q,i) => `
+      <div class="card mb-2">
+        <div class="card-body py-3">
+          <div class="d-flex justify-content-between">
+            <div class="d-flex gap-2 align-items-start flex-grow-1">
+              <span class="badge bg-secondary">${i+1}</span>
+              <div class="flex-grow-1">
+                <p class="mb-2 fw-500">${q.content}</p>
+                <div class="d-flex flex-wrap gap-2">
+                  ${(q.options||[]).map(o => `
+                    <span class="badge ${o.isCorrect?'bg-success':'bg-light text-dark border'} px-2">
+                      ${o.label||''}: ${o.content}
+                    </span>`).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="d-flex gap-1 ms-2">
+              <span class="badge ${diffBadge(q.difficulty)}">${diffLabel(q.difficulty)}</span>
+              <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteQuestion('${q.id}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function openQuestionModal() {
+    document.getElementById('edit-q-id').value = '';
+    document.getElementById('q-content').value = '';
+    document.getElementById('q-difficulty').value = 'MEDIUM';
+    document.querySelectorAll('#options-container .option-text').forEach(i => i.value = '');
+    document.querySelectorAll('#options-container input[name=correct]').forEach(r => r.checked = false);
+    const courseId = document.getElementById('q-course-filter').value;
+    if(courseId) document.getElementById('q-course-id').value = courseId;
+    new bootstrap.Modal(document.getElementById('questionModal')).show();
+  }
+
+  async function saveQuestion() {
+    try {
+      // ── Validate ──────────────────────────────
+      const content = document.getElementById('q-content').value.trim();
+      const courseId = document.getElementById('q-course-id').value;
+      if (!content) { toast('Nhập nội dung câu hỏi', 'error'); return; }
+      if (!courseId) { toast('Chọn môn học', 'error'); return; }
+
+      const correctRadio = document.querySelector('#options-container input[name=correct]:checked');
+      if (!correctRadio) { toast('Chọn đáp án đúng (tích vào ✓ Đúng)', 'error'); return; }
+      const correctIdx = parseInt(correctRadio.value);
+
+      // ── Đọc đáp án bằng querySelectorAll đúng chuẩn ──
+      const labels = ['A','B','C','D'];
+      const rows = document.querySelectorAll('#options-container .option-row');
+      const options = [];
+      let hasEmpty = false;
+
+      rows.forEach((row, i) => {
+        // Lấy đúng input text (không phải radio)
+        const inp = row.querySelector('input.option-text, input[type="text"].form-control');
+        const val = inp ? inp.value.trim() : '';
+        if (!val) hasEmpty = true;
+        options.push({ content: val, label: labels[i], isCorrect: i === correctIdx });
+      });
+
+      if (hasEmpty) { toast('Điền đầy đủ nội dung cả 4 đáp án', 'error'); return; }
+
+      // ── Gửi API ──────────────────────────────
+      const dto = {
+        content,
+        courseId,
+        difficulty: document.getElementById('q-difficulty').value || 'MEDIUM',
+        options
+      };
+
+      const result = await API.post('/api/teacher/questions', dto);
+
+      if (!result || result.error || (result._status && result._status >= 400)) {
+        toast(result?.message || result?.error || 'Lỗi khi lưu câu hỏi', 'error');
+        return;
+      }
+
+      // ── Thành công ─────────────────────────────
+      bootstrap.Modal.getInstance(document.getElementById('questionModal')).hide();
+      toast('✅ Đã lưu câu hỏi thành công!');
+
+      // FIX: Sync filter dropdown với môn vừa lưu → loadQuestions sẽ hiển thị đúng
+      const filterSel = document.getElementById('q-course-filter');
+      if (filterSel.value !== courseId) {
+        filterSel.value = courseId;
+      }
+      loadQuestions();
+
+    } catch (err) {
+      console.error('saveQuestion error:', err);
+      toast('Lỗi: ' + err.message, 'error');
+    }
+  }
+
+  async function deleteQuestion(id) {
+    if (!confirm('Xóa câu hỏi này?')) return;
+    await API.del(`/api/teacher/questions/${id}`);
+    toast('Đã xóa'); loadQuestions();
+  }
+
+  // ── Exams ─────────────────────────────────────────────
+  async function loadMyExams() {
+    myExams = await API.get('/api/teacher/exams') || [];
+    renderExams();
+    const sel = document.getElementById('result-exam-select');
+    sel.innerHTML = '<option value="">-- Chọn bài thi --</option>' +
+      myExams.map(e => `<option value="${e.id}">${e.title}</option>`).join('');
+  }
+
+  function renderExams() {
+    const container = document.getElementById('exam-cards');
+    if (!myExams.length) {
+      container.innerHTML = '<div class="col-12"><div class="empty-state"><i class="bi bi-journal-x"></i>Chưa có bài thi</div></div>'; return;
+    }
+    container.innerHTML = myExams.map(e => `
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="badge bg-${e.status}">${statusLabel(e.status)}</span>
+              <small class="text-muted">${e.duration} phút · ${e.questionCount} câu</small>
+            </div>
+            <h6 class="fw-bold">${e.title}</h6>
+            <p class="text-muted small mb-3">${e.course?.name||''} – ${e.course?.grade?.name||''}</p>
+            <div class="d-flex gap-1 flex-wrap">
+              ${e.status==='DRAFT' ? `<button class="btn btn-sm btn-success" onclick="changeStatus('${e.id}','OPEN')">
+                <i class="bi bi-play-fill"></i> Mở thi</button>` : ''}
+              ${e.status==='OPEN' ? `<button class="btn btn-sm btn-danger" onclick="changeStatus('${e.id}','CLOSED')">
+                <i class="bi bi-stop-fill"></i> Đóng</button>` : ''}
+              <button class="btn btn-sm btn-outline-primary" onclick="viewResults('${e.id}')">
+                <i class="bi bi-bar-chart"></i> Kết quả
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteExam('${e.id}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  async function loadQuestionsForExam() {
+    const courseId = document.getElementById('exam-course-id').value;
+    if (!courseId) return;
+    const questions = await API.get(`/api/teacher/questions/course/${courseId}`) || [];
+    const container = document.getElementById('exam-question-list');
+    if (!questions.length) {
+      container.innerHTML = '<p class="text-muted text-center">Chưa có câu hỏi cho môn này</p>'; return;
+    }
+    container.innerHTML = questions.map((q,i) => `
+      <div class="d-flex gap-2 mb-2 align-items-center">
+        <input type="checkbox" class="form-check-input exam-q-check" value="${q.id}" id="eq${i}">
+        <label for="eq${i}" class="form-check-label small">${i+1}. ${q.content.substring(0,80)}...</label>
+      </div>`).join('');
+  }
+
+  function openExamModal() {
+    document.getElementById('edit-exam-id').value = '';
+    document.getElementById('exam-title').value = '';
+    document.getElementById('exam-duration').value = 15;
+    document.getElementById('exam-qcount').value = 10;
+    document.getElementById('exam-start').value = '';
+    document.getElementById('exam-end').value = '';
+    document.getElementById('exam-question-list').innerHTML = '<p class="text-muted text-center">Chọn môn học để xem câu hỏi</p>';
+    new bootstrap.Modal(document.getElementById('examModal')).show();
+  }
+
+  async function saveExam() {
+    const title = document.getElementById('exam-title').value.trim();
+    const courseId = document.getElementById('exam-course-id').value;
+    const duration = parseInt(document.getElementById('exam-duration').value);
+    const qcount = parseInt(document.getElementById('exam-qcount').value);
+    if (!title || !courseId) { toast('Nhập đầy đủ tên bài thi và môn học','error'); return; }
+
+    const checkedIds = Array.from(document.querySelectorAll('.exam-q-check:checked')).map(c => c.value);
+    const startVal = document.getElementById('exam-start').value;
+    const endVal = document.getElementById('exam-end').value;
+
+    const dto = {
+      title, courseId, duration, questionCount: qcount,
+      questionIds: checkedIds,
+      startTime: startVal ? startVal + ':00' : null,
+      endTime: endVal ? endVal + ':00' : null
+    };
+    const id = document.getElementById('edit-exam-id').value;
+    if (id) await API.put(`/api/teacher/exams/${id}`, dto);
+    else await API.post('/api/teacher/exams', dto);
+    bootstrap.Modal.getInstance(document.getElementById('examModal')).hide();
+    toast('Đã lưu bài thi');
+    loadMyExams();
+  }
+
+  async function changeStatus(id, status) {
+    await API.put(`/api/teacher/exams/${id}/status`, {status});
+    toast(`Đã ${status==='OPEN'?'mở':'đóng'} bài thi`);
+    loadMyExams();
+  }
+
+  async function deleteExam(id) {
+    if (!confirm('Xóa bài thi này?')) return;
+    await API.del(`/api/teacher/exams/${id}`);
+    toast('Đã xóa'); loadMyExams();
+  }
+
+  function viewResults(examId) {
+    showSection('sec-results');
+    document.getElementById('result-exam-select').value = examId;
+    loadExamResult();
+  }
+
+  async function loadExamResult() {
+    const examId = document.getElementById('result-exam-select').value;
+    currentExamIdForLog = examId || null;
+    if (!examId) { document.getElementById('result-detail').classList.add('d-none'); return; }
+    const report = await API.get(`/api/teacher/exams/${examId}/report`);
+    document.getElementById('result-detail').classList.remove('d-none');
+    document.getElementById('btn-dl-excel').onclick = () =>
+      API.download(`/api/teacher/exams/${examId}/excel`, 'diem_thi.xlsx');
+    const scores = report.scores || [];
+    const avg = scores.length ? (scores.reduce((s,x)=>s+x.score,0)/scores.length).toFixed(2) : 0;
+    document.getElementById('result-stats').innerHTML = `
+      <div class="col-md-4"><div class="stat-card" style="border-color:#3498db">
+        <div class="stat-value" style="color:#3498db">${scores.length}</div><div class="stat-label">Đã nộp</div>
+      </div></div>
+      <div class="col-md-4"><div class="stat-card" style="border-color:#27ae60">
+        <div class="stat-value text-success">${avg}</div><div class="stat-label">Điểm trung bình</div>
+      </div></div>
+      <div class="col-md-4"><div class="stat-card" style="border-color:#f39c12">
+        <div class="stat-value" style="color:#f39c12">${scores.filter(s=>s.score>=5).length}</div>
+        <div class="stat-label">Đạt (≥5)</div>
+      </div></div>`;
+    document.getElementById('result-tbody').innerHTML = scores.map((s,i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td>
+          <strong>${s.studentName}</strong><br>
+          <small class="text-muted">${s.username||''}</small>
+        </td>
+        <td><span class="badge ${s.score>=5?'bg-success':'bg-danger'} px-3 py-2" style="font-size:0.9rem">${s.score}</span></td>
+        <td>
+          ${s.tabSwitchCount > 0
+            ? `<button class="btn btn-sm btn-warning" onclick="openTabDetail('${s.attemptId}','${s.studentName}')">
+                 <i class="bi bi-eye me-1"></i><strong>${s.tabSwitchCount}</strong> lần
+               </button>`
+            : `<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>0 lần</span>`
+          }
+        </td>
+        <td class="text-muted small">${s.submitTime?new Date(s.submitTime).toLocaleString('vi-VN'):'–'}</td>
+      </tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted py-3">Chưa có bài nộp</td></tr>';
+  }
+
+  // ── Materials ──────────────────────────────────────────
+  async function loadMaterials() {
+    const mats = await API.get('/api/teacher/materials') || [];
+    document.getElementById('material-tbody').innerHTML = mats.map(m => `
+      <tr>
+        <td><i class="bi bi-file-earmark-fill text-primary me-2"></i><strong>${m.title}</strong></td>
+        <td>${m.course?.name||'–'}</td>
+        <td class="text-muted small">${m.uploadDate?new Date(m.uploadDate).toLocaleDateString('vi-VN'):'–'}</td>
+        <td>
+          ${m.fileUrl ? `<a href="${m.fileUrl}" class="btn btn-sm btn-outline-primary me-1" target="_blank">
+            <i class="bi bi-download"></i></a>` : ''}
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteMaterial('${m.id}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="4" class="text-muted text-center py-3">Chưa có tài liệu</td></tr>';
+  }
+
+  function openMaterialModal() {
+    document.getElementById('mat-title').value = '';
+    document.getElementById('mat-file').value = '';
+    new bootstrap.Modal(document.getElementById('materialModal')).show();
+  }
+
+  async function saveMaterial() {
+    const title = document.getElementById('mat-title').value.trim();
+    const courseId = document.getElementById('mat-course-id').value;
+    const fileInput = document.getElementById('mat-file');
+    if (!title || !courseId) { toast('Nhập đầy đủ thông tin','error'); return; }
+
+    const fd = new FormData();
+    fd.append('title', title);
+    fd.append('courseId', courseId);
+    if (fileInput.files[0]) fd.append('file', fileInput.files[0]);
+
+    await fetch('/api/teacher/materials', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + API.token() },
+      body: fd
+    });
+    bootstrap.Modal.getInstance(document.getElementById('materialModal')).hide();
+    toast('Đã upload tài liệu'); loadMaterials();
+  }
+
+  async function deleteMaterial(id) {
+    if (!confirm('Xóa tài liệu này?')) return;
+    await API.del(`/api/teacher/materials/${id}`);
+    toast('Đã xóa'); loadMaterials();
+  }
+
+
+  async function openTabDetail(attemptId, studentName) {
+    document.getElementById('tab-detail-student').textContent = '👤 ' + studentName;
+    document.getElementById('tab-detail-exam').textContent = document.getElementById('result-exam-select').selectedOptions[0]?.text || '';
+    document.getElementById('tab-detail-tbody').innerHTML = '<tr><td colspan="3" class="text-center py-3">Đang tải...</td></tr>';
+    new bootstrap.Modal(document.getElementById('tabDetailModal')).show();
+
+    const logs = await API.get(`/api/teacher/attempts/${attemptId}/tab-switch-logs`) || [];
+    document.getElementById('tab-detail-count').textContent = logs.length + ' lần chuyển tab';
+    if (!logs.length) {
+      document.getElementById('tab-detail-tbody').innerHTML =
+        '<tr><td colspan="3" class="text-success text-center py-3"><i class="bi bi-check-circle me-2"></i>Không có log chuyển tab</td></tr>';
+      return;
+    }
+    // FIX: filter và sort - chỉ hiện log "Rời trang", đánh STT 1→n
+    const leaveOnlyLogs = logs
+      .sort((a,b) => new Date(a.switchTime) - new Date(b.switchTime));
+
+    // Pair logs: Rời trang + Quay lại tương ứng
+    const pairedRows = [];
+    let stt = 1;
+    for (let i = 0; i < leaveOnlyLogs.length; i++) {
+      const l = leaveOnlyLogs[i];
+      const isLeave = l.description && l.description.includes('Rời');
+      const isReturn = l.description && l.description.includes('Quay lại');
+      if (isLeave) {
+        const returnLog = leaveOnlyLogs[i + 1];
+        const returnInfo = returnLog && returnLog.description.includes('Quay lại')
+          ? returnLog.description : '–';
+        const durationMatch = returnInfo.match(/vắng (\d+)s/);
+        const duration = durationMatch ? durationMatch[1] : '?';
+        pairedRows.push({ stt: stt++, leaveLog: l, returnInfo, duration });
+        if (returnLog && returnLog.description.includes('Quay lại')) i++;
+      }
+    }
+
+    if (!pairedRows.length) {
+      // fallback: hiện tất cả logs
+      document.getElementById('tab-detail-tbody').innerHTML = leaveOnlyLogs.map((l, i) => `
+        <tr>
+          <td><span class="badge bg-warning text-dark">${i+1}</span></td>
+          <td>${l.description || 'Rời khỏi trang'}</td>
+          <td class="text-muted small">${l.switchTime ? new Date(l.switchTime).toLocaleTimeString('vi-VN') : '–'}</td>
+        </tr>`).join('');
+    } else {
+      document.getElementById('tab-detail-tbody').innerHTML = pairedRows.map(p => `
+        <tr class="${p.duration > 30 ? 'table-warning' : ''}">
+          <td><span class="badge bg-warning text-dark">${p.stt}</span></td>
+          <td>
+            <span class="text-danger"><i class="bi bi-box-arrow-right me-1"></i>${p.leaveLog.description}</span>
+            ${p.returnInfo !== '–' ? `<br><span class="text-success small"><i class="bi bi-box-arrow-in-left me-1"></i>${p.returnInfo}</span>` : ''}
+          </td>
+          <td class="text-muted small">
+            ${new Date(p.leaveLog.switchTime).toLocaleTimeString('vi-VN')}
+            ${p.duration !== '?' ? `<br><span class="badge bg-secondary">${p.duration}s</span>` : ''}
+          </td>
+        </tr>`).join('');
+    }
+  }
+
+  function switchResultTab(tabId, el) {
+    document.getElementById('tab-scores').classList.toggle('d-none', tabId !== 'tab-scores');
+    document.getElementById('tab-tablog').classList.toggle('d-none', tabId !== 'tab-tablog');
+    document.querySelectorAll('#result-tabs .nav-link').forEach(a => a.classList.remove('active'));
+    el.classList.add('active');
+    if (tabId === 'tab-tablog') loadTabSwitchLog();
+  }
+
+  let currentExamIdForLog = null;
+
+  async function loadTabSwitchLog() {
+    if (!currentExamIdForLog) {
+      document.getElementById('tablog-tbody').innerHTML =
+        '<tr><td colspan="4" class="text-muted text-center py-3">Chọn bài thi ở tab Điểm số trước</td></tr>';
+      return;
+    }
+    const logs = await API.get(`/api/teacher/exams/${currentExamIdForLog}/tab-switch-logs`) || [];
+    const tbody = document.getElementById('tablog-tbody');
+    if (!logs.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-success text-center py-3">✅ Không có học sinh nào chuyển tab</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.map(s => `
+      <tr class="${s.totalSwitches > 0 ? 'table-warning' : ''}">
+        <td><strong>${s.studentName}</strong><br><small class="text-muted">${s.username}</small></td>
+        <td><span class="badge ${s.score>=5?'bg-success':'bg-danger'}">${s.score}</span></td>
+        <td>
+          ${s.totalSwitches > 0
+            ? `<span class="badge bg-danger fs-6">⚠️ ${s.totalSwitches} lần</span>`
+            : '<span class="badge bg-success">Không có</span>'}
+        </td>
+        <td>
+          ${s.logs && s.logs.length ? `
+            <button class="btn btn-sm btn-outline-warning" type="button"
+              data-bs-toggle="collapse" data-bs-target="#log-${s.username.replace(/[^a-zA-Z0-9]/g,'_')}">
+              <i class="bi bi-chevron-down"></i> Xem ${s.logs.length} log
+            </button>
+            <div class="collapse mt-2" id="log-${s.username.replace(/[^a-zA-Z0-9]/g,'_')}">
+              <div class="bg-light rounded p-2">
+                ${s.logs.map(l => `
+                  <div class="d-flex gap-2 align-items-center py-1 border-bottom">
+                    <span class="badge bg-warning text-dark">#${l.no}</span>
+                    <small class="text-muted">${new Date(l.time).toLocaleTimeString('vi-VN')}</small>
+                    <small>${l.description}</small>
+                  </div>`).join('')}
+              </div>
+            </div>` : '<span class="text-muted">–</span>'}
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── Utils ────────────────────────────────────────────
+  function statusLabel(s) { return {DRAFT:'Nháp',OPEN:'Đang mở',CLOSED:'Đã đóng',SCHEDULED:'Đã lên lịch'}[s]||s; }
+  function diffLabel(d) { return {EASY:'Dễ',MEDIUM:'TB',HARD:'Khó'}[d]||d; }
+  function diffBadge(d) { return {EASY:'bg-success',MEDIUM:'bg-warning',HARD:'bg-danger'}[d]||'bg-secondary'; }
+
+  const origShow = showSection;
+  window.showSection = function(id) {
+    origShow(id);
+    if (id === 'sec-materials') loadMaterials();
+    if (id === 'sec-results') loadMyExams();
+  };
+
+  if (!API.token() || !['TEACHER','ADMIN'].includes(API.user().role)) location.href='/';
+  else init();
+</script>
+
+<!-- Tab Switch Detail Modal -->
+<div class="modal fade" id="tabDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#f39c12;color:#fff">
+        <h5 class="modal-title"><i class="bi bi-eye-slash-fill me-2"></i>Chi tiết chuyển tab</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h6 class="mb-0" id="tab-detail-student"></h6>
+            <small class="text-muted" id="tab-detail-exam"></small>
+          </div>
+          <span class="badge bg-warning text-dark fs-6" id="tab-detail-count"></span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm mb-0">
+            <thead style="background:#fff8e1">
+              <tr>
+                <th style="width:60px">STT</th>
+                <th>Tên cửa sổ / Tab đích</th>
+                <th>Thời gian</th>
+              </tr>
+            </thead>
+            <tbody id="tab-detail-tbody">
+              <tr><td colspan="3" class="text-center text-muted py-3">Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
